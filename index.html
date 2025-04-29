@@ -1,0 +1,293 @@
+
+<!-- chinese_learning_helper/frontend/learn.html -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>汉字学习 - 中文学习助手</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.loli.net/css?family=Noto+Sans+SC:400,500,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        .hanzi-card {
+            transition: all 0.3s ease;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .hanzi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+        }
+        .hanzi-char {
+            font-size: 3rem;
+            color: #4f46e5;
+        }
+        .pinyin {
+            font-size: 1.25rem;
+            color: #6b7280;
+        }
+        .word-group {
+            border-top: 1px solid #e5e7eb;
+            padding-top: 0.75rem;
+            margin-top: 0.75rem;
+        }
+        .word-item {
+            display: inline-block;
+            background: #f3f4f6;
+            border-radius: 0.375rem;
+            padding: 0.25rem 0.5rem;
+            margin: 0.25rem;
+            font-size: 0.875rem;
+        }
+        .page-btn {
+            transition: all 0.2s ease;
+        }
+        .page-btn:hover {
+            transform: scale(1.1);
+            background-color: #e0e7ff;
+        }
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="particles-js" class="particles"></div>
+    
+    <div class="container mx-auto px-4 py-8">
+        <!-- 头部导航 -->
+        <header class="flex justify-between items-center mb-8">
+            <a href="index.html" class="text-2xl font-bold text-gray-800">
+                <i class="fas fa-arrow-left mr-2"></i>
+                <span class="text-indigo-600">中文</span>学习助手
+            </a>
+            <div class="flex space-x-4">
+                <button id="searchBtn" class="px-4 py-2 rounded-full bg-white shadow-md hover:bg-gray-100">
+                    <i class="fas fa-search"></i>
+                </button>
+                <button id="filterBtn" class="px-4 py-2 rounded-full bg-white shadow-md hover:bg-gray-100">
+                    <i class="fas fa-filter"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- 汉字展示区 -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-semibold text-gray-800">常用汉字</h2>
+                <div class="flex space-x-2">
+                    <button id="prevBtn" class="page-btn px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200">
+                        <i class="fas fa-chevron-left"></i> 上一页
+                    </button>
+                    <span class="px-4 py-2 text-sm" id="progressText">1/10</span>
+                    <button id="nextBtn" class="page-btn px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200">
+                        下一页 <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" id="hanziGrid">
+                <!-- 汉字卡片将通过JS动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
+    <script>
+        // 粒子效果初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            particlesJS('particles-js', {
+                particles: {
+                    number: { value: 60, density: { enable: true, value_area: 800 } },
+                    color: { value: "#667eea" },
+                    shape: { type: "circle" },
+                    opacity: { value: 0.5, random: true },
+                    size: { value: 3, random: true },
+                    line_linked: { enable: true, distance: 150, color: "#667eea", opacity: 0.4, width: 1 },
+                    move: { enable: true, speed: 2, direction: "none", random: true, straight: false, out_mode: "out" }
+                },
+                interactivity: {
+                    detect_on: "canvas",
+                    events: {
+                        onhover: { enable: true, mode: "repulse" },
+                        onclick: { enable: true, mode: "push" }
+                    }
+                }
+            });
+
+            // 汉字数据 (示例数据)
+            const hanziData = [
+                {
+                    char: '廖',
+                    pinyin: 'liao',
+                    words: ['只有用来做人名']
+                }, {
+                    char: '鹭',
+                    pinyin: '鹭',
+                    words: ['白鹭','苍鹭']
+                },
+                {
+                    char: '榕',
+                    pinyin: 'rong',
+                    words: ['榕树',]
+                },
+                {
+                    char: '日',
+                    pinyin: 'rì',
+                    words: ['日期', '日记', '日常', '日光', '日本']
+                },
+                {
+                    char: '月',
+                    pinyin: 'yuè',
+                    words: ['月亮', '月份', '月光', '月球', '月饼']
+                },
+                {
+                    char: '山',
+                    pinyin: 'shān',
+                    words: ['山峰', '山水', '山谷', '山区', '山洞']
+                },
+                {
+                    char: '水',
+                    pinyin: 'shuǐ',
+                    words: ['水果', '水平', '水分', '水泥', '水杯']
+                },
+                {
+                    char: '火',
+                    pinyin: 'huǒ',
+                    words: ['火车', '火焰', '火柴', '火灾', '火锅']
+                },
+                {
+                    char: '木',
+                    pinyin: 'mù',
+                    words: ['木头', '木材', '木工', '木马', '木偶']
+                },
+                {
+                    char: '田',
+                    pinyin: 'tián',
+                    words: ['田地', '田野', '农田', '田埂', '田鼠']
+                },
+                {
+                    char: '女',
+                    pinyin: 'nǚ',
+                    words: ['女人', '女孩', '女士', '女儿', '女性']
+                },
+                {
+                    char: '好',
+                    pinyin: 'hǎo',
+                    words: ['好看', '好吃', '好玩', '好处', '好人']
+                },
+                {
+                    char: '学',
+                    pinyin: 'xué',
+                    words: ['学习', '学校', '学生', '学问', '学术']
+                },
+                {
+                    char: '生',
+                    pinyin: 'shēng',
+                    words: ['生活', '生日', '生命', '生产', '生物']
+                },
+                {
+                    char: '国',
+                    pinyin: 'guó',
+                    words: ['国家', '国际', '国内', '国外', '国旗']
+                },
+                {
+                    char: '家',
+                    pinyin: 'jiā',
+                    words: ['家庭', '家人', '家乡', '家具', '家务']
+                },
+                {
+                    char: '中',
+                    pinyin: 'zhōng',
+                    words: ['中国', '中间', '中心', '中文', '中学']
+                }
+            ];
+
+            let currentPage = 1;
+            const itemsPerPage = 8;
+            const totalPages = Math.ceil(hanziData.length / itemsPerPage);
+
+            // 渲染汉字卡片
+            function renderHanziCards() {
+                const hanziGrid = document.getElementById('hanziGrid');
+                hanziGrid.innerHTML = '';
+                
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const endIndex = startIndex + itemsPerPage;
+                const currentHanzi = hanziData.slice(startIndex, endIndex);
+                
+                currentHanzi.forEach(hanzi => {
+                    const card = document.createElement('div');
+                    card.className = 'hanzi-card p-6 text-center fade-in';
+                    card.innerHTML = `
+                        <div class="hanzi-char mb-2">${hanzi.char}</div>
+                        <div class="pinyin mb-4">${hanzi.pinyin}</div>
+                        <div class="word-group">
+                            ${hanzi.words.map(word => `<span class="word-item">${word}</span>`).join('')}
+                        </div>
+                    `;
+                    hanziGrid.appendChild(card);
+                });
+
+                updatePagination();
+            }
+
+            // 更新分页状态
+            function updatePagination() {
+                document.getElementById('progressText').textContent = `${currentPage}/${totalPages}`;
+                document.getElementById('prevBtn').disabled = currentPage === 1;
+                document.getElementById('nextBtn').disabled = currentPage === totalPages;
+            }
+
+            // 事件监听
+            document.getElementById('prevBtn').addEventListener('click', function() {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderHanziCards();
+                }
+            });
+
+            document.getElementById('nextBtn').addEventListener('click', function() {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderHanziCards();
+                }
+            });
+
+            document.getElementById('searchBtn').addEventListener('click', function() {
+                alert('搜索功能正在开发中');
+            });
+
+            document.getElementById('filterBtn').addEventListener('click', function() {
+                alert('筛选功能正在开发中');
+            });
+
+            // 初始化页面
+            renderHanziCards();
+        });
+    </script>
+</body>
+</html>
